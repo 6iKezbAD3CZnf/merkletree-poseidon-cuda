@@ -1,4 +1,8 @@
+#ifndef FIELD_CUH_
+#define FIELD_CUH_
+
 #define GOLDILOCKS_PRIME 0xffffffff0000001
+#define SPONGE_WIDTH 12
 
 class F {
 public:
@@ -71,3 +75,5 @@ private:
     //     return t;
     // }
 };
+
+#endif // FIELD_CUH_

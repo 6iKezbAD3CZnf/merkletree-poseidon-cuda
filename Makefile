@@ -1,2 +1,2 @@
-all:
-	nvcc main.cu -o main
+all: main.cu test.cu poseidon.cu
+	nvcc $^ -o main
