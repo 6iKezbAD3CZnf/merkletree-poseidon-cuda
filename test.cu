@@ -9,12 +9,12 @@ void check_test_vectors(std::vector<std::array<unsigned long long, SPONGE_WIDTH>
         std::array<unsigned long long, SPONGE_WIDTH> input_ = inputs[i];
         std::array<unsigned long long, SPONGE_WIDTH> expected_output_ = expected_outputs[i];
 
-        std::array<F, SPONGE_WIDTH> input;
+        Hash input;
         for (int i=0; i<SPONGE_WIDTH; i++) {
             input[i] = F(input_[i]);
         }
 
-        std::array<F, SPONGE_WIDTH> output = poseidon(input);
+        Hash output = poseidon(input);
 
         for (int j=0; j<SPONGE_WIDTH; j++) {
             F ex_output = F(expected_output_[j]);

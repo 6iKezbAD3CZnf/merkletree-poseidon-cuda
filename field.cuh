@@ -1,8 +1,9 @@
 #ifndef FIELD_CUH_
 #define FIELD_CUH_
 
+#include <iostream>
+
 #define GOLDILOCKS_PRIME 0xffffffff0000001
-#define SPONGE_WIDTH 12
 
 class F {
 public:
@@ -20,9 +21,9 @@ public:
     // }
 
     // Multiplication
-    // F operator*(const F& other) const {
-    //         return F((value * other.value) % p);
-    // }
+    F operator*(const F& other) const {
+            return F((value * other.value) % p);
+    }
 
     // Division
     // F operator/(const F& other) const {
@@ -50,6 +51,20 @@ public:
     }
     bool operator!=(const F& other) const {
         return value != other.value;
+    }
+
+    F square() const {
+        return F(value * value);
+    }
+
+    unsigned long long to_noncanonical_u64() const {
+        return value;
+    }
+
+    // Stream insertion operator
+    friend std::ostream& operator<<(std::ostream& os, const F& f) {
+        os << f.value;
+        return os;
     }
 
 private:
