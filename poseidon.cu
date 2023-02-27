@@ -110,11 +110,3 @@ void poseidon(F state[WIDTH]) {
     partial_rounds(state, &round_ctr);
     full_rounds(state, &round_ctr);
 }
-
-// void print(Hash hash) {
-//     std::cout << "Hash is ";
-//     for (auto const& h: hash) {
-//         std::cout << std::hex << h << ", ";
-//     }
-//     std::cout << std::endl;
-// }

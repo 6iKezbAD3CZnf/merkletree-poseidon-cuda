@@ -11,8 +11,6 @@
 #define N_PARTIAL_ROUNDS 22
 #define N_ROUNDS (N_FULL_ROUNDS_TOTAL + N_PARTIAL_ROUNDS)
 
-// typedef std::array<F, SPONGE_WIDTH> Hash;
-
 __device__
 const uint64_t MDS_MATRIX_CIRC[WIDTH] = {17, 15, 41, 16, 2, 28, 13, 13, 39, 18, 34, 20};
 __device__
