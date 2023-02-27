@@ -13,8 +13,10 @@
 
 // typedef std::array<F, SPONGE_WIDTH> Hash;
 
-// const std::array<unsigned long long, SPONGE_WIDTH> MDS_MATRIX_CIRC = {17, 15, 41, 16, 2, 28, 13, 13, 39, 18, 34, 20};
-// const std::array<unsigned long long, SPONGE_WIDTH> MDS_MATRIX_DIAG = {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+__device__
+const uint64_t MDS_MATRIX_CIRC[WIDTH] = {17, 15, 41, 16, 2, 28, 13, 13, 39, 18, 34, 20};
+__device__
+const uint64_t MDS_MATRIX_DIAG[WIDTH] = {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // const std::array<unsigned long long, SPONGE_WIDTH> FAST_PARTIAL_FIRST_ROUND_CONSTANT = {
 //     0x3cc3f892184df408, 0xe993fd841e7e97f1, 0xf2831d3575f0f3af, 0xd2500e0a350994ca,
