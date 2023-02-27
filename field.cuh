@@ -1,16 +1,20 @@
 #ifndef FIELD_CUH_
 #define FIELD_CUH_
 
-#include <iostream>
+// #include <iostream>
 
 #define GOLDILOCKS_PRIME 0xffffffff0000001
 
 class F {
 public:
+    __host__ __device__
     F() : p(GOLDILOCKS_PRIME), value(0) {}
+
+    __host__ __device__
     F(unsigned long long v) : p(GOLDILOCKS_PRIME), value(v % p) {}
 
     // Addition
+    __host__ __device__
     F operator+(const F& other) const {
             return F((value + other.value) % p);
     }
@@ -20,10 +24,10 @@ public:
     //         return F((value - other.value + p) % p);
     // }
 
-    // Multiplication
-    F operator*(const F& other) const {
-            return F((value * other.value) % p);
-    }
+    // // Multiplication
+    // F operator*(const F& other) const {
+    //         return F((value * other.value) % p);
+    // }
 
     // Division
     // F operator/(const F& other) const {
@@ -45,27 +49,27 @@ public:
     //     return F(result);
     // }
 
-    // Comparison
-    bool operator==(const F& other) const {
-        return value == other.value;
-    }
-    bool operator!=(const F& other) const {
-        return value != other.value;
-    }
+    // // Comparison
+    // bool operator==(const F& other) const {
+    //     return value == other.value;
+    // }
+    // bool operator!=(const F& other) const {
+    //     return value != other.value;
+    // }
 
-    F square() const {
-        return F(value * value);
-    }
+    // F square() const {
+    //     return F(value * value);
+    // }
 
-    unsigned long long to_noncanonical_u64() const {
-        return value;
-    }
+    // unsigned long long to_noncanonical_u64() const {
+    //     return value;
+    // }
 
     // Stream insertion operator
-    friend std::ostream& operator<<(std::ostream& os, const F& f) {
-        os << f.value;
-        return os;
-    }
+    // friend std::ostream& operator<<(std::ostream& os, const F& f) {
+    //     os << f.value;
+    //     return os;
+    // }
 
 private:
     unsigned long long p;
