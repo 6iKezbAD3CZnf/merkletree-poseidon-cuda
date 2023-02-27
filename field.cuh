@@ -50,10 +50,10 @@ public:
     //     return F(result);
     // }
 
-    // // Comparison
-    // bool operator==(const F& other) const {
-    //     return value == other.value;
-    // }
+    // Comparison
+    bool operator==(const F& other) const {
+        return value == other.value;
+    }
     // bool operator!=(const F& other) const {
     //     return value != other.value;
     // }
