@@ -12,8 +12,8 @@ void constant_layer(F state[WIDTH], int round_ctr) {
 __host__ __device__
 F sbox_monomial(F x) {
     // x |--> x^7
-    F x2 = x.square();
-    F x4 = x2.square();
+    F x2 = x * x;
+    F x4 = x2 * x2;
     F x3 = x * x2;
     return x3 * x4;
 }
@@ -30,9 +30,16 @@ F mds_row_shf(int r, F state[WIDTH]) {
     F res = F(0);
 
     for (int i=0; i<WIDTH; i++) {
-        res = res + state[(i + r) % WIDTH] * MDS_MATRIX_CIRC[i];
+        // printf("mds_row_shf: r=%d, i=%d, res=%lx\n", r, i, res.value);
+        // printf("state[(i + r) % WIDTH] is %lx\n", state[(i+r)%WIDTH].value);
+        // printf("MDS_MATRIX_CIRC[i] is %lx\n", MDS_MATRIX_CIRC[i]);
+        F tmp = state[(i + r) % WIDTH] * MDS_MATRIX_CIRC[i];
+        // printf("tmp is %lx\n", tmp.value);
+        res = res + tmp;
     }
     res = res + state[r] * MDS_MATRIX_DIAG[r];
+
+    // printf("mds_row_shf: r=%d, res=%lx\n", r, res.value);
 
     return res;
 }
@@ -53,9 +60,38 @@ void mds_layer(F state[WIDTH]) {
 __host__ __device__
 void full_rounds(F state[WIDTH], int *round_ctr) {
     for (int i=0; i<HALF_N_FULL_ROUNDS; i++) {
+    // for (int i=0; i<2; i++) {
+
+        // printf("Initial ");
+        // for (int j=0; j<WIDTH; j++) {
+        //     printf("%lx, ", state[j].value);
+        // }
+        // printf("\n");
+
         constant_layer(state, *round_ctr);
+
+        // printf("After constant ");
+        // for (int j=0; j<WIDTH; j++) {
+        //     printf("%lx, ", state[j].value);
+        // }
+        // printf("\n");
+
         sbox_layer(state);
+
+        // printf("After sbox ");
+        // for (int j=0; j<WIDTH; j++) {
+        //     printf("%lx, ", state[j].value);
+        // }
+        // printf("\n");
+
         mds_layer(state);
+
+        // printf("After mds ");
+        // for (int j=0; j<WIDTH; j++) {
+        //     printf("%lx, ", state[j].value);
+        // }
+        // printf("\n");
+
         *round_ctr += 1;
     }
     return;
@@ -106,7 +142,27 @@ __host__ __device__
 void poseidon(F state[WIDTH]) {
     int round_ctr = 0;
 
+    printf("Initial ");
+    for (int j=0; j<WIDTH; j++) {
+        printf("%lx, ", state[j].value);
+    }
+    printf("\n");
     full_rounds(state, &round_ctr);
+    printf("After fullrounds ");
+    for (int j=0; j<WIDTH; j++) {
+        printf("%lx, ", state[j].value);
+    }
+    printf("\n");
     partial_rounds(state, &round_ctr);
+    printf("After partialrounds ");
+    for (int j=0; j<WIDTH; j++) {
+        printf("%lx, ", state[j].value);
+    }
+    printf("\n");
     full_rounds(state, &round_ctr);
+    printf("After full roungds ");
+    for (int j=0; j<WIDTH; j++) {
+        printf("%lx, ", state[j].value);
+    }
+    printf("\n");
 }

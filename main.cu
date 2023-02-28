@@ -5,9 +5,9 @@
 
 #include "poseidon.cuh"
 
-#define N 500000
-#define N_BLOCK 7
-#define N_THREAD 640
+#define N 1
+#define N_BLOCK 1
+#define N_THREAD 1
 
 void hostPoseidon(F* states) {
     F state[WIDTH];
@@ -27,7 +27,8 @@ void hostPoseidon(F* states) {
     return;
 }
 
-__global__ void devicePoseidon(F* states) {
+__global__
+void devicePoseidon(F* states) {
     F state[WIDTH];
 
     int i = threadIdx.x + blockIdx.x * blockDim.x;
@@ -52,7 +53,7 @@ __global__ void devicePoseidon(F* states) {
 
 void print_debug(F* states) {
     std::cout << std::hex;
-    for (int i=0; i<10; i++) {
+    for (int i=0; i<N; i++) {
         for (int j=0; j<WIDTH; j++) {
             std::cout << states[i*WIDTH + j] << ", ";
         }
@@ -92,7 +93,7 @@ int main() {
             h_returned_states[i*WIDTH + j] = states[i*WIDTH + j];
         }
     }
-    // print_debug(h_returned_states);
+    print_debug(h_returned_states);
 
     /******
        Init
@@ -119,7 +120,7 @@ int main() {
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "Device time is " << duration.count() << std::endl;
-    // print_debug(d_returned_states);
+    print_debug(d_returned_states);
 
     /**************
        Sanity Check
@@ -134,10 +135,6 @@ int main() {
     cudaFree(d_states);
     free(h_returned_states);
     free(states);
-
-    int max_threads_per_block;
-    cudaDeviceGetAttribute(&max_threads_per_block, cudaDevAttrMaxThreadsPerBlock, 0);
-    std::cout << "max_threads_per_block is " << max_threads_per_block << std::endl;
 
     return 0;
 }
