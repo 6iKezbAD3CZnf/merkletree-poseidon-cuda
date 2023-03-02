@@ -1,10 +1,15 @@
-CC=nvcc
+BIN = main
+OBJ = uint128_t.o field.o poseidon.o merkle_tree.o main.o
+CC = nvcc
 
-all: uint128_t.o field.o poseidon.o merkle_tree.o main.o
-	${CC} $^ -o main
+${BIN}: ${OBJ}
+	${CC} $^ -o ${BIN}
 
-%.o: %.cu
+main.o: main.cu
 	${CC} -dc $^
 
+%.o: %.cu %.cuh
+	${CC} -dc $<
+
 clean:
-	rm -f *.o main
+	rm -f *.o ${BIN}

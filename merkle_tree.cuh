@@ -5,16 +5,19 @@
 
 #include "poseidon.cuh"
 
+#define N_BLOCK 8
+#define N_THREAD 500
+
 #define LEAVE_WIDTH 8
 #define HASH_WIDTH 4
-#define N_LEAVES (1 << 15)
+#define N_LEAVES (1 << 19)
 #define N_DIGESTS (2 * N_LEAVES)
 
 class MerkleTree {
 public:
-    MerkleTree(F leaves[N_LEAVES]);
+    MerkleTree(bool is_host, F leaves[N_LEAVES]);
 
-    void fill_digests(F digests[N_DIGESTS], F leaves[N_LEAVES]);
+    void host_fill_digests(F digests[N_DIGESTS], F leaves[N_LEAVES]);
     void print_digests();
     void print_root();
 
