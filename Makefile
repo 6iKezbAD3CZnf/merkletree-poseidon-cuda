@@ -1,13 +1,10 @@
 CC=nvcc
 
-all: main.o poseidon.o
-	nvcc $^ -o main
+all: uint128_t.o field.o poseidon.o main.o
+	${CC} $^ -o main
 
-main.o: main.cu field.cuh
-	nvcc -dc main.cu
-
-poseidon.o: poseidon.cu
-	nvcc -dc $^
+%.o: %.cu
+	${CC} -dc $^
 
 clean:
 	rm -f *.o main

@@ -11,35 +11,19 @@
 #define N_PARTIAL_ROUNDS 22
 #define N_ROUNDS (N_FULL_ROUNDS_TOTAL + N_PARTIAL_ROUNDS)
 
+#ifdef __CUDA_ARCH__
 __device__
+#endif
 const uint64_t MDS_MATRIX_CIRC[WIDTH] = {17, 15, 41, 16, 2, 28, 13, 13, 39, 18, 34, 20};
+#ifdef __CUDA_ARCH__
 __device__
+#endif
 const uint64_t MDS_MATRIX_DIAG[WIDTH] = {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-// const std::array<unsigned long long, SPONGE_WIDTH> FAST_PARTIAL_FIRST_ROUND_CONSTANT = {
-//     0x3cc3f892184df408, 0xe993fd841e7e97f1, 0xf2831d3575f0f3af, 0xd2500e0a350994ca,
-//     0xc5571f35d7288633, 0x91d89c5184109a02, 0xf37f925d04e5667b, 0x2d6e448371955a69,
-//     0x740ef19ce01398a1, 0x694d24c0752fdf45, 0x60936af96ee2f148, 0xc33448feadc78f0c,
-// };
-
-// const std::array<unsigned long long, N_PARTIAL_ROUNDS> FAST_PARTIAL_ROUND_CONSTANTS = {
-//     0x74cb2e819ae421ab, 0xd2559d2370e7f663, 0x62bf78acf843d17c, 0xd5ab7b67e14d1fb4,
-//     0xb9fe2ae6e0969bdc, 0xe33fdf79f92a10e8, 0x0ea2bb4c2b25989b, 0xca9121fbf9d38f06,
-//     0xbdd9b0aa81f58fa4, 0x83079fa4ecf20d7e, 0x650b838edfcc4ad3, 0x77180c88583c76ac,
-//     0xaf8c20753143a180, 0xb8ccfe9989a39175, 0x954a1729f60cc9c5, 0xdeb5b550c4dca53b,
-//     0xf01bb0b00f77011e, 0xa1ebb404b676afd9, 0x860b6e1597a0173e, 0x308bb65a036acbce,
-//     0x1aca78f31c97c876, 0x0,
-// };
-
+#ifdef __CUDA_ARCH__
 __device__
+#endif
 const uint64_t ALL_ROUND_CONSTANTS[WIDTH * N_ROUNDS]  = {
-    // WARNING: The AVX2 Goldilocks specialization relies on all round constants being in
-    // 0..0xfffeeac900011537. If these constants are randomly regenerated, there is a ~.6% chance
-    // that this condition will no longer hold.
-    //
-    // WARNING: If these are changed in any way, then all the
-    // implementations of Poseidon must be regenerated. See comments
-    // in `poseidon_goldilocks.rs`.
     0xb585f766f2144405, 0x7746a55f43921ad7, 0xb2fb0d31cee799b4, 0x0f6760a4803427d7,
     0xe10d666650f4e012, 0x8cae14cb07d09bf1, 0xd438539c95f63e9f, 0xef781c7ce35b4c3d,
     0xcdc4a239b0c44426, 0x277fa208bf337bff, 0xe17653a29da578a1, 0xc54302f225db2c76,

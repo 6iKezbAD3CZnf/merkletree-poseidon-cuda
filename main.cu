@@ -5,9 +5,9 @@
 
 #include "poseidon.cuh"
 
-#define N 1
-#define N_BLOCK 1
-#define N_THREAD 1
+#define N 500000
+#define N_BLOCK 8
+#define N_THREAD 500
 
 void hostPoseidon(F* states) {
     F state[WIDTH];
@@ -53,7 +53,8 @@ void devicePoseidon(F* states) {
 
 void print_debug(F* states) {
     std::cout << std::hex;
-    for (int i=0; i<N; i++) {
+    // for (int i=0; i<N; i++) {
+    for (int i=0; i<1; i++) {
         for (int j=0; j<WIDTH; j++) {
             std::cout << states[i*WIDTH + j] << ", ";
         }
@@ -74,7 +75,7 @@ int main() {
             states[i*WIDTH + j] = F(0);
         }
     }
-    // print_debug(states);
+    print_debug(states);
 
     /******
        Host
@@ -107,15 +108,15 @@ int main() {
     /********
        Device
     ********/
-    start = std::chrono::high_resolution_clock::now();
-
     F* d_states;
     cudaMalloc(&d_states, sizeof(F)*N*WIDTH);
+    F* d_returned_states = (F*)malloc(sizeof(F)*N*WIDTH);
+
+    start = std::chrono::high_resolution_clock::now();
+
     cudaMemcpy(d_states, states, sizeof(F)*N*WIDTH, cudaMemcpyHostToDevice);
     devicePoseidon<<<N_BLOCK, N_THREAD>>>(d_states);
-    F* d_returned_states = (F*)malloc(sizeof(F)*N*WIDTH);
     cudaMemcpy(d_returned_states, d_states, sizeof(F)*N*WIDTH, cudaMemcpyDeviceToHost);
-    // cudaDeviceSynchronize();
 
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);

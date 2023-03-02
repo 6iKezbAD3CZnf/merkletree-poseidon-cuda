@@ -1,24 +1,20 @@
 #ifndef UINT128_T_CUH_
 #define UINT128_T_CUH_
 
+#include <cstdint>
+
 #define EPSILON 0xffffffff
 
 class uint128_t{
 public:
-    uint64_t lo, hi;
+    __host__ __device__
+    uint128_t();
 
     __host__ __device__
-    uint128_t() : lo(0), hi(0) {};
+    uint128_t(uint64_t n);
 
     __host__ __device__
-    uint128_t(uint64_t n) : lo(n), hi(0) {};
-
-    __host__ __device__
-    uint128_t & operator=(const uint128_t & n) {
-        lo = n.lo;
-        hi = n.hi;
-        return * this;
-    }
+    uint128_t & operator=(const uint128_t & n);
 
     __host__ __device__
     static inline uint128_t mul128(uint64_t x, uint64_t y) {
@@ -59,6 +55,8 @@ public:
         return t2;
     }
 
+private:
+    uint64_t lo, hi;
 }; // class uint128_t
 
 __host__ __device__
