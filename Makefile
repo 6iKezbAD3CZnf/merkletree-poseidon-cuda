@@ -1,5 +1,5 @@
 BIN = main
-OBJ = uint128_t.o field.o poseidon.o merkle_tree.o main.o
+OBJ = field.o poseidon.o merkle_tree.o main.o
 CC = nvcc
 
 ${BIN}: ${OBJ}
@@ -8,7 +8,7 @@ ${BIN}: ${OBJ}
 main.o: main.cu
 	${CC} -dc $^
 
-%.o: %.cu %.cuh
+%.o: %.cu %.cuh uint128_t.cuh
 	${CC} -dc $<
 
 clean:
