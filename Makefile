@@ -1,6 +1,6 @@
 CC=nvcc
 
-all: uint128_t.o field.o poseidon.o main.o
+all: uint128_t.o field.o poseidon.o merkle_tree.o main.o
 	${CC} $^ -o main
 
 %.o: %.cu

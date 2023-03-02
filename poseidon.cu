@@ -1,9 +1,9 @@
 #include "poseidon.cuh"
 
 __host__ __device__
-void constant_layer(F state[WIDTH], int round_ctr) {
-    for (int i=0; i<WIDTH; i++) {
-        uint64_t round_constant = ALL_ROUND_CONSTANTS[i + WIDTH * round_ctr];
+void constant_layer(F state[SPONGE_WIDTH], int round_ctr) {
+    for (int i=0; i<SPONGE_WIDTH; i++) {
+        uint64_t round_constant = ALL_ROUND_CONSTANTS[i + SPONGE_WIDTH * round_ctr];
         state[i] = state[i] + F(round_constant);
     }
     return;
@@ -19,18 +19,18 @@ F sbox_monomial(F x) {
 }
 
 __host__ __device__
-void sbox_layer(F state[WIDTH]) {
-    for (int i=0; i<WIDTH; i++) {
+void sbox_layer(F state[SPONGE_WIDTH]) {
+    for (int i=0; i<SPONGE_WIDTH; i++) {
         state[i] = sbox_monomial(state[i]);
     }
 }
 
 __host__ __device__
-F mds_row_shf(int r, F state[WIDTH]) {
+F mds_row_shf(int r, F state[SPONGE_WIDTH]) {
     F res = F(0);
 
-    for (int i=0; i<WIDTH; i++) {
-        res = res + state[(i + r) % WIDTH] * MDS_MATRIX_CIRC[i];
+    for (int i=0; i<SPONGE_WIDTH; i++) {
+        res = res + state[(i + r) % SPONGE_WIDTH] * MDS_MATRIX_CIRC[i];
     }
     res = res + state[r] * MDS_MATRIX_DIAG[r];
 
@@ -38,20 +38,20 @@ F mds_row_shf(int r, F state[WIDTH]) {
 }
 
 __host__ __device__
-void mds_layer(F state[WIDTH]) {
-    F new_state[WIDTH];
+void mds_layer(F state[SPONGE_WIDTH]) {
+    F new_state[SPONGE_WIDTH];
 
-    for (int r=0; r<WIDTH; r++) {
+    for (int r=0; r<SPONGE_WIDTH; r++) {
         new_state[r] = mds_row_shf(r, state);
     }
 
-    for (int i=0; i<WIDTH; i++) {
+    for (int i=0; i<SPONGE_WIDTH; i++) {
         state[i] = new_state[i];
     }
 }
 
 __host__ __device__
-void full_rounds(F state[WIDTH], int *round_ctr) {
+void full_rounds(F state[SPONGE_WIDTH], int *round_ctr) {
     for (int i=0; i<HALF_N_FULL_ROUNDS; i++) {
         constant_layer(state, *round_ctr);
         sbox_layer(state);
@@ -62,7 +62,7 @@ void full_rounds(F state[WIDTH], int *round_ctr) {
 }
 
 __host__ __device__
-void partial_rounds(F state[WIDTH], int *round_ctr) {
+void partial_rounds(F state[SPONGE_WIDTH], int *round_ctr) {
     for (int i=0; i<N_PARTIAL_ROUNDS; i++) {
         constant_layer(state, *round_ctr);
         state[0] = sbox_monomial(state[0]);
@@ -74,7 +74,7 @@ void partial_rounds(F state[WIDTH], int *round_ctr) {
 
 // Poseidon Hash
 __host__ __device__
-void poseidon(F state[WIDTH]) {
+void poseidon(F state[SPONGE_WIDTH]) {
     int round_ctr = 0;
 
     full_rounds(state, &round_ctr);

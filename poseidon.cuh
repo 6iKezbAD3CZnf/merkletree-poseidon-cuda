@@ -5,7 +5,7 @@
 
 #include "field.cuh"
 
-#define WIDTH 12
+#define SPONGE_WIDTH 12
 #define HALF_N_FULL_ROUNDS 4
 #define N_FULL_ROUNDS_TOTAL (2 * HALF_N_FULL_ROUNDS)
 #define N_PARTIAL_ROUNDS 22
@@ -14,16 +14,16 @@
 #ifdef __CUDA_ARCH__
 __device__
 #endif
-const uint64_t MDS_MATRIX_CIRC[WIDTH] = {17, 15, 41, 16, 2, 28, 13, 13, 39, 18, 34, 20};
+const uint64_t MDS_MATRIX_CIRC[SPONGE_WIDTH] = {17, 15, 41, 16, 2, 28, 13, 13, 39, 18, 34, 20};
 #ifdef __CUDA_ARCH__
 __device__
 #endif
-const uint64_t MDS_MATRIX_DIAG[WIDTH] = {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+const uint64_t MDS_MATRIX_DIAG[SPONGE_WIDTH] = {8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 #ifdef __CUDA_ARCH__
 __device__
 #endif
-const uint64_t ALL_ROUND_CONSTANTS[WIDTH * N_ROUNDS]  = {
+const uint64_t ALL_ROUND_CONSTANTS[SPONGE_WIDTH * N_ROUNDS]  = {
     0xb585f766f2144405, 0x7746a55f43921ad7, 0xb2fb0d31cee799b4, 0x0f6760a4803427d7,
     0xe10d666650f4e012, 0x8cae14cb07d09bf1, 0xd438539c95f63e9f, 0xef781c7ce35b4c3d,
     0xcdc4a239b0c44426, 0x277fa208bf337bff, 0xe17653a29da578a1, 0xc54302f225db2c76,
@@ -117,6 +117,6 @@ const uint64_t ALL_ROUND_CONSTANTS[WIDTH * N_ROUNDS]  = {
 };
 
 __host__ __device__
-void poseidon(F state[WIDTH]);
+void poseidon(F state[SPONGE_WIDTH]);
 
 #endif // POSEIDON_CUH_
