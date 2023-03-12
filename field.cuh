@@ -31,6 +31,11 @@ public:
         return os;
     }
 
+    __host__ __device__
+    uint64_t to_u64() {
+        return value;
+    }
+
 private:
     uint64_t value;
 };
