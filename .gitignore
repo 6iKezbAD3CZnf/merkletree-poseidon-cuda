@@ -1,2 +1,7 @@
 main
 *.o
+
+
+# Added by cargo
+
+/target

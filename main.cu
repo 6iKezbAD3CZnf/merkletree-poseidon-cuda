@@ -3,7 +3,8 @@
 
 #include "merkle_tree.cuh"
 
-int main() {
+extern "C"
+int cc_main() {
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -21,13 +22,13 @@ int main() {
     /******
        Host
     ******/
-    // start = std::chrono::high_resolution_clock::now();
-    // MerkleTree host_tree = MerkleTree(true, leaves);
-    // end = std::chrono::high_resolution_clock::now();
-    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "Host time is " << duration.count() << std::endl;
-    // // host_tree.print_digests();
-    // host_tree.print_root();
+    start = std::chrono::high_resolution_clock::now();
+    MerkleTree host_tree = MerkleTree(true, leaves);
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Host time is " << duration.count() << std::endl;
+    // host_tree.print_digests();
+    host_tree.print_root();
 
     /********
        Device
@@ -41,4 +42,8 @@ int main() {
     device_tree.print_root();
 
     return 0;
+}
+
+int main() {
+    cc_main();
 }
