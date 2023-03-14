@@ -6,11 +6,11 @@
 #include "poseidon.cuh"
 
 #define N_BLOCK 8
-#define N_THREAD 500
+#define N_THREAD 576
 
 #define LEAVE_WIDTH 8
 #define HASH_WIDTH 4
-#define N_LEAVES (1 << 19)
+#define N_LEAVES (1 << 22)
 #define N_DIGESTS (2 * N_LEAVES)
 
 class MerkleTree {

@@ -23,13 +23,6 @@ public:
     uint128_t(uint64_t n0, uint64_t n1): lo(n0), hi(n1) {}
 
     __host__ __device__
-    uint128_t & operator=(const uint128_t & n) {
-        lo = n.lo;
-        hi = n.hi;
-        return * this;
-    }
-
-    __host__ __device__
     bool operator<(const uint128_t & n) {
         return ((hi == n.hi) ? (lo < n.lo) : (hi < n.hi));
     }
