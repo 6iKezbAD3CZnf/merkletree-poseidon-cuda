@@ -14,7 +14,8 @@
 #define N_LEAVES (1 << 3)
 #define N_DIGESTS (2 * (N_LEAVES - (1 << CAP_HEIGHT)) + 1)
 
-void host_fill_digests(F digests[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_WIDTH*N_LEAVES]);
+void host_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_WIDTH*N_LEAVES]);
+void device_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_WIDTH*N_LEAVES]);
 
 class MerkleTree {
 public:
@@ -26,7 +27,7 @@ public:
 
 // private:
     F leaves[LEAVE_WIDTH*N_LEAVES];
-    F digests[HASH_WIDTH*N_DIGESTS];
+    F digests_cap[HASH_WIDTH*N_DIGESTS];
 };
 
 #endif // MERKLE_TREE_CUH_
