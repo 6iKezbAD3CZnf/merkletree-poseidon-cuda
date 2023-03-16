@@ -46,11 +46,11 @@ void permute(F* digests, F* leaves, uint32_t from, uint32_t to) {
 }
 
 __global__
-void device_fill_digests0(F* d_digests, F* d_leaves) {
+void device_fill_digests0(F* d_digests, F* d_leaves, uint32_t n_leaves) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     int stride = blockDim.x * gridDim.x;
 
-    while (i < N_LEAVES) {
+    while (i < n_leaves) {
         uint32_t from = i;
         uint32_t to = (i>>1<<2) | (i&0b1);
         permute(d_digests, d_leaves, from, to);
@@ -81,22 +81,22 @@ void device_fill_digests1(
     return;
 }
 
-void device_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_WIDTH*N_LEAVES]) {
+void device_fill_digests_cap(F* digests_cap, uint32_t n_digests_cap, F* leaves, uint32_t n_leaves, uint32_t cap_height) {
     F* d_digests;
     F* d_leaves;
-    cudaMalloc(&d_leaves, sizeof(F)*LEAVE_WIDTH*N_DIGESTS);
-    cudaMalloc(&d_digests, sizeof(F)*HASH_WIDTH*N_DIGESTS);
-    cudaMemcpy(d_leaves, leaves, sizeof(F)*LEAVE_WIDTH*N_LEAVES, cudaMemcpyHostToDevice);
+    cudaMalloc(&d_leaves, sizeof(F)*LEAVE_WIDTH*n_digests_cap);
+    cudaMalloc(&d_digests, sizeof(F)*HASH_WIDTH*n_digests_cap);
+    cudaMemcpy(d_leaves, leaves, sizeof(F)*LEAVE_WIDTH*n_leaves, cudaMemcpyHostToDevice);
 
-    device_fill_digests0<<<N_BLOCK, N_THREAD>>>(d_digests, d_leaves);
+    device_fill_digests0<<<N_BLOCK, N_THREAD>>>(d_digests, d_leaves, n_leaves);
     cudaDeviceSynchronize();
 
     int level = 1;
-    int n_level_leaves = N_LEAVES >> 1;
+    int n_level_leaves = n_leaves >> 1;
     uint32_t last_level_start_idx = 0;
     uint32_t level_start_idx = 2;
 
-    while (n_level_leaves > (1 << CAP_HEIGHT)) {
+    while (n_level_leaves > (1 << cap_height)) {
         device_fill_digests1<<<N_BLOCK, N_THREAD>>>(d_digests, level, n_level_leaves, last_level_start_idx, level_start_idx);
         cudaDeviceSynchronize();
 
@@ -106,7 +106,7 @@ void device_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE
         level_start_idx += (1<<level);
     }
 
-    cudaMemcpy(digests_cap, d_digests, sizeof(F)*HASH_WIDTH*N_DIGESTS, cudaMemcpyDeviceToHost);
+    cudaMemcpy(digests_cap, d_digests, sizeof(F)*HASH_WIDTH*n_digests_cap, cudaMemcpyDeviceToHost);
 
     cudaFree(d_leaves);
     cudaFree(d_digests);
@@ -120,21 +120,21 @@ void device_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE
     return;
 }
 
-void host_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_WIDTH*N_LEAVES]) {
+void host_fill_digests_cap(F* digests_cap, F* leaves, uint32_t n_leaves, uint32_t cap_height) {
     F state[SPONGE_WIDTH] = { F(0) };
 
-    for (uint32_t i=0; i<N_LEAVES; i++) {
+    for (uint32_t i=0; i<n_leaves; i++) {
         uint32_t from = i;
         uint32_t to = (i>>1<<2) | (i&0b1);
         permute(digests_cap, leaves, from, to);
     }
 
     uint32_t level = 1;
-    uint32_t n_level_leaves = N_LEAVES >> 1;
+    uint32_t n_level_leaves = n_leaves >> 1;
     uint32_t last_level_start_idx = 0;
     uint32_t level_start_idx = 2;
 
-    while (n_level_leaves > (1 << CAP_HEIGHT)) {
+    while (n_level_leaves > (1 << cap_height)) {
         for (uint32_t i=0; i<n_level_leaves; i++) {
             uint32_t left = last_level_start_idx + i*(1<<(level+1));
             uint32_t right = left + 1;
@@ -157,18 +157,8 @@ void host_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_W
     return;
 }
 
-MerkleTree::MerkleTree(bool is_host, F leaves[LEAVE_WIDTH*N_LEAVES], uint32_t cap_height) {
-    assert(cap_height == CAP_HEIGHT);
-
-    if (is_host) {
-        host_fill_digests_cap(digests_cap, leaves);
-    } else {
-        device_fill_digests_cap(digests_cap, leaves);
-    }
-}
-
-void MerkleTree::print_leaves() {
-    for (int i=0; i<N_LEAVES; i++) {
+void print_leaves(F* leaves, uint32_t n_leaves) {
+    for (int i=0; i<n_leaves; i++) {
         std::cout << std::dec;
         std::cout << "leave" << i << " is [";
         std::cout << std::hex;
@@ -181,13 +171,13 @@ void MerkleTree::print_leaves() {
     std::cout << std::dec;
 }
 
-void MerkleTree::print_digests() {
-    for (int i=0; i<N_DIGESTS; i++) {
+void print_digests(F* digests, uint32_t n_digests) {
+    for (int i=0; i<n_digests; i++) {
         std::cout << std::dec;
         std::cout << "digest" << i << " is [";
         std::cout << std::hex;
         for (int j=0; j<HASH_WIDTH; j++) {
-            std::cout << digests_cap[i*HASH_WIDTH + j] << ", ";
+            std::cout << digests[i*HASH_WIDTH + j] << ", ";
         }
         std::cout << "]" << std::endl;
     }
@@ -195,12 +185,14 @@ void MerkleTree::print_digests() {
     std::cout << std::dec;
 }
 
-void MerkleTree::print_root() {
+void print_cap(F* digests_cap, uint32_t n_digests, uint32_t cap_height) {
     std::cout << std::hex;
-    for (int j=0; j<HASH_WIDTH; j++) {
-        std::cout << digests_cap[(N_DIGESTS - 1)*HASH_WIDTH + j] << ", ";
+    for (int i=0; i<(1<<cap_height); i++) {
+        for (int j=0; j<HASH_WIDTH; j++) {
+            std::cout << digests_cap[(n_digests+i)*HASH_WIDTH + j] << ", ";
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
     std::cout << std::endl;
     std::cout << std::dec;
 }

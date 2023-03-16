@@ -10,24 +10,23 @@
 
 #define LEAVE_WIDTH 8
 #define HASH_WIDTH 4
-#define CAP_HEIGHT 0
-#define N_LEAVES (1 << 3)
-#define N_DIGESTS (2 * (N_LEAVES - (1 << CAP_HEIGHT)) + 1)
 
-void host_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_WIDTH*N_LEAVES]);
-void device_fill_digests_cap(F digests_cap[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_WIDTH*N_LEAVES]);
+void host_fill_digests_cap(
+        F* digests_cap,
+        F* leaves,
+        uint32_t n_leaves,
+        uint32_t cap_height
+        );
+void device_fill_digests_cap(
+        F* digests_cap,
+        uint32_t n_digests_cap,
+        F* leaves,
+        uint32_t n_leaves,
+        uint32_t cap_height
+        );
 
-class MerkleTree {
-public:
-    MerkleTree(bool is_host, F leaves[N_LEAVES], uint32_t cap_height);
-
-    void print_leaves();
-    void print_digests();
-    void print_root();
-
-// private:
-    F leaves[LEAVE_WIDTH*N_LEAVES];
-    F digests_cap[HASH_WIDTH*N_DIGESTS];
-};
+void print_leaves(F* leaves, uint32_t n_leaves);
+void print_digests(F* digests, uint32_t n_digests);
+void print_cap(F* digests_cap, uint32_t n_digests, uint32_t cap_height);
 
 #endif // MERKLE_TREE_CUH_
