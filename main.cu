@@ -3,8 +3,7 @@
 
 #include "merkle_tree.cuh"
 
-extern "C"
-int cc_main() {
+int main() {
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
@@ -22,35 +21,26 @@ int cc_main() {
     /******
        Host
     *******/
-    // start = std::chrono::high_resolution_clock::now();
-    // MerkleTree host_tree = MerkleTree(true, leaves, 0);
-    // end = std::chrono::high_resolution_clock::now();
-    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "Host time is " << duration.count() << std::endl;
-    // // host_tree.print_leaves();
-    // // host_tree.print_digests();
-    // host_tree.print_root();
+    start = std::chrono::high_resolution_clock::now();
+    MerkleTree host_tree = MerkleTree(true, leaves, 0);
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Host time is " << duration.count() << std::endl;
+    host_tree.print_leaves();
+    host_tree.print_digests();
+    host_tree.print_root();
 
     /********
        Device
     *********/
-    start = std::chrono::high_resolution_clock::now();
-    MerkleTree device_tree = MerkleTree(false, leaves, 0);
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Device time is " << duration.count() << std::endl;
-    // device_tree.print_leaves();
-    // device_tree.print_digests();
-    device_tree.print_root();
+    // start = std::chrono::high_resolution_clock::now();
+    // MerkleTree device_tree = MerkleTree(false, leaves, 0);
+    // end = std::chrono::high_resolution_clock::now();
+    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::cout << "Device time is " << duration.count() << std::endl;
+    // // device_tree.print_leaves();
+    // // device_tree.print_digests();
+    // device_tree.print_root();
 
     return 0;
-}
-
-extern "C"
-F test_cc() {
-    return F(3);
-}
-
-int main() {
-    cc_main();
 }

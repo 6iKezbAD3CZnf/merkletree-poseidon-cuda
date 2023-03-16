@@ -135,7 +135,7 @@ void host_fill_digests(F digests[HASH_WIDTH*N_DIGESTS], F leaves[LEAVE_WIDTH*N_L
     uint32_t level_start_idx = 2;
 
     while (n_level_leaves > (1 << CAP_HEIGHT)) {
-        for (int i=0; i<n_level_leaves; i++) {
+        for (uint32_t i=0; i<n_level_leaves; i++) {
             uint32_t left = last_level_start_idx + i*(1<<(level+1));
             uint32_t right = left + 1;
             uint32_t to = (level_start_idx + (i>>1)*(1<<(level+2))) | (i&0b1);
