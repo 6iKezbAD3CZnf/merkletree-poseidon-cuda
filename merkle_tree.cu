@@ -158,32 +158,36 @@ void device_fill_digests_cap(
     return;
 }
 
-void host_fill_digests_cap(
+void host_fill_digests_caps_sub(
+        uint32_t subleaves_idx,
+        uint32_t subdigests_idx,
+        uint32_t cap_idx,
         F* digests_cap,
         F* leaves,
-        uint32_t n_leaves,
-        uint32_t leave_len,
-        uint32_t cap_height
-        ) {
-    F state[SPONGE_WIDTH] = { F(0) };
-
-    for (uint32_t i=0; i<n_leaves; i++) {
+        uint32_t num_leaves,
+        uint32_t leave_len
+) {
+    for (uint32_t i=0; i<num_leaves; i++) {
         uint32_t from = i;
         uint32_t to = (i>>1<<2) | (i&0b1);
-        hash_or_noop(digests_cap + to*HASH_WIDTH, leaves + from*leave_len, leave_len);
+        hash_or_noop(digests_cap + (subdigests_idx + to)*HASH_WIDTH, leaves + (subleaves_idx + from)*leave_len, leave_len);
     }
 
     uint32_t level = 1;
-    uint32_t n_level_leaves = n_leaves >> 1;
+    uint32_t n_level_leaves = num_leaves >> 1;
     uint32_t last_level_start_idx = 0;
     uint32_t level_start_idx = 2;
 
-    while (n_level_leaves > (uint32_t) (1 << cap_height)) {
+    while (n_level_leaves > 1) {
         for (uint32_t i=0; i<n_level_leaves; i++) {
             uint32_t left = last_level_start_idx + i*(1<<(level+1));
             uint32_t right = left + 1;
             uint32_t to = (level_start_idx + (i>>1)*(1<<(level+2))) | (i&0b1);
-            two_to_one(digests_cap + to*HASH_WIDTH, digests_cap + left*HASH_WIDTH, digests_cap + right*HASH_WIDTH);
+            two_to_one(
+                    digests_cap + (subdigests_idx + to)*HASH_WIDTH,
+                    digests_cap + (subdigests_idx + left)*HASH_WIDTH,
+                    digests_cap + (subdigests_idx + right)*HASH_WIDTH
+                    );
         }
 
         level += 1;
@@ -195,8 +199,37 @@ void host_fill_digests_cap(
     // caps
     uint32_t left = last_level_start_idx;
     uint32_t right = left + 1;
-    uint32_t to = level_start_idx;
-    two_to_one(digests_cap + to*HASH_WIDTH, digests_cap + left*HASH_WIDTH, digests_cap + right*HASH_WIDTH);
+    two_to_one(
+            digests_cap + cap_idx*HASH_WIDTH,
+            digests_cap + (subdigests_idx + left)*HASH_WIDTH,
+            digests_cap + (subdigests_idx + right)*HASH_WIDTH
+            );
+
+    return;
+}
+
+void host_fill_digests_caps(
+        F* digests_cap,
+        uint32_t num_digests,
+        F* leaves,
+        uint32_t num_leaves,
+        uint32_t leave_len,
+        uint32_t cap_height
+        ) {
+    uint32_t num_caps = 1 << cap_height;
+    uint32_t num_subtree_leaves = num_leaves / num_caps;
+    uint32_t num_subtree_digests = num_digests / num_caps;
+    for (uint32_t i=0; i<num_caps; i++) {
+        host_fill_digests_caps_sub(
+            num_subtree_leaves * i,
+            num_subtree_digests * i,
+            num_digests + i,
+            digests_cap,
+            leaves,
+            num_leaves / num_caps,
+            leave_len
+        );
+    }
 
     return;
 }

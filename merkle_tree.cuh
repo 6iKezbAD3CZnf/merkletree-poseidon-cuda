@@ -11,14 +11,15 @@
 #define SPONGE_RATE 8
 #define HASH_WIDTH 4
 
-void host_fill_digests_cap(
+void host_fill_digests_caps(
         F* digests_cap,
+        uint32_t num_digests,
         F* leaves,
-        uint32_t n_leaves,
+        uint32_t num_leaves,
         uint32_t leave_len,
         uint32_t cap_height
         );
-void device_fill_digests_cap(
+void device_fill_digests_caps(
         F* digests_cap,
         uint32_t n_digests_cap,
         F* leaves,
