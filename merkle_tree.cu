@@ -144,7 +144,7 @@ void device_fill_digests_caps(
     cudaDeviceSynchronize();
 
     int level = 1;
-    int num_level_digests = num_leaves >> 1;
+    uint32_t num_level_digests = num_leaves >> 1;
     uint32_t last_level_start_idx = 0;
     uint32_t level_start_idx = 2;
     while (num_level_digests > num_caps) {
@@ -171,7 +171,7 @@ void device_fill_digests_caps(
     cudaFree(d_digests_caps);
 
     // caps
-    for (int i=0; i<num_caps; i++) {
+    for (uint32_t i=0; i<num_caps; i++) {
         uint32_t subtree_digests_idx = num_digests / num_caps * i;
         uint32_t left = last_level_start_idx;
         uint32_t right = left + 1;

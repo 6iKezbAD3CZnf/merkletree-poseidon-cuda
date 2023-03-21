@@ -3,9 +3,9 @@
 
 #include "merkle_tree.cuh"
 
-#define CAP_HEIGHT 2
+#define CAP_HEIGHT 4
 #define LEAVE_LEN 8
-#define LOG_N_LEAVES 12
+#define LOG_N_LEAVES 4
 
 int main() {
     auto start = std::chrono::high_resolution_clock::now();
