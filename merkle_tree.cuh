@@ -12,7 +12,7 @@
 #define HASH_WIDTH 4
 
 void host_fill_digests_caps(
-        F* digests_cap,
+        F* digests_caps,
         uint32_t num_digests,
         F* leaves,
         uint32_t num_leaves,
@@ -20,16 +20,16 @@ void host_fill_digests_caps(
         uint32_t cap_height
         );
 void device_fill_digests_caps(
-        F* digests_cap,
+        F* digests_caps,
         uint32_t n_digests_cap,
         F* leaves,
-        uint32_t n_leaves,
+        uint32_t num_leaves,
         uint32_t leave_len,
         uint32_t cap_height
         );
 
-void print_leaves(F* leaves, uint32_t n_leaves);
-void print_digests(F* digests, uint32_t n_digests);
-void print_cap(F* digests_cap, uint32_t n_digests, uint32_t cap_height);
+void print_leaves(F* leaves, uint32_t num_leaves, uint32_t leave_len);
+void print_digests(F* digests, uint32_t num_digests);
+void print_caps(F* digests_caps, uint32_t num_digests, uint32_t cap_height);
 
 #endif // MERKLE_TREE_CUH_

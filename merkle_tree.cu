@@ -26,25 +26,6 @@ void two_to_one(F* digest, F* left, F* right) {
     }
 }
 
-// __host__ __device__
-// void permute(F* digest, F* leave) {
-//     F state[SPONGE_WIDTH] = { F(0) };
-
-//     for (int k=0; k<SPONGE_WIDTH; k++) {
-//         if (k < LEAVE_WIDTH) {
-//             state[k] = leave[k];
-//         } else {
-//             break;
-//         }
-//     }
-
-//     poseidon(state);
-
-//     for (int k=0; k<HASH_WIDTH; k++) {
-//         digest[k] = state[k];
-//     }
-// }
-
 __host__ __device__
 void hash_or_noop(F* digest, F* leave, uint32_t leave_len) {
     if (leave_len * 8 <= HASH_WIDTH) {
@@ -77,121 +58,171 @@ void hash_or_noop(F* digest, F* leave, uint32_t leave_len) {
 }
 
 __global__
-void device_fill_digests0(F* d_digests, F* d_leaves, uint32_t n_leaves, uint32_t leave_len) {
-    int i = threadIdx.x + blockIdx.x * blockDim.x;
+void device_fill_digests0(
+        F* d_digests_caps,
+        uint32_t num_subtree_digests,
+        F* d_leaves,
+        uint32_t num_subtree_leaves,
+        uint32_t leave_len,
+        uint32_t num_caps
+        ) {
+    int id = threadIdx.x + blockIdx.x * blockDim.x;
     int stride = blockDim.x * gridDim.x;
 
-    while (i < n_leaves) {
-        uint32_t from = i;
-        uint32_t to = (i>>1<<2) | (i&0b1);
-        hash_or_noop(d_digests + to*HASH_WIDTH, d_leaves + from*leave_len, leave_len);
-        i += stride;
+    while (id < num_caps * num_subtree_leaves) {
+        int j = id % num_subtree_leaves; // outer loop
+        int i = (id - j) / num_subtree_leaves; // inner loop
+
+        uint32_t from = j;
+        uint32_t to = (j>>1<<2) | (j&0b1);
+        hash_or_noop(
+                d_digests_caps + (num_subtree_digests*i + to)*HASH_WIDTH,
+                d_leaves + (num_subtree_leaves*i + from)*leave_len,
+                leave_len
+                );
+
+        id += stride;
     }
 }
 
 __global__
 void device_fill_digests1(
-        F* d_digests,
+        F* d_digests_caps,
+        uint32_t num_subtree_digests,
         uint32_t level,
-        uint32_t n_level_leaves,
+        uint32_t num_level_subtree_digests,
         uint32_t last_level_start_idx,
-        uint32_t level_start_idx
+        uint32_t level_start_idx,
+        uint32_t num_caps
 ) {
-    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int id = threadIdx.x + blockIdx.x * blockDim.x;
     int stride = blockDim.x * gridDim.x;
 
-    while (i < n_level_leaves) {
-        uint32_t left = last_level_start_idx + i*(1<<(level+1));
-        uint32_t right = left + 1;
-        uint32_t to = (level_start_idx + (i>>1)*(1<<(level+2))) | (i&0b1);
-        two_to_one(d_digests + to*HASH_WIDTH, d_digests + left*HASH_WIDTH, d_digests + right*HASH_WIDTH);
+    while (id < num_caps * num_level_subtree_digests) {
+        int j = id % num_level_subtree_digests; // outer loop
+        int i = (id - j) / num_level_subtree_digests; // inner loop
 
-        i += stride;
+        uint32_t left = last_level_start_idx + j*(1<<(level+1));
+        uint32_t right = left + 1;
+        uint32_t to = (level_start_idx + (j>>1)*(1<<(level+2))) | (j&0b1);
+        two_to_one(
+                d_digests_caps + (num_subtree_digests*i + to)*HASH_WIDTH,
+                d_digests_caps + (num_subtree_digests*i + left)*HASH_WIDTH,
+                d_digests_caps + (num_subtree_digests*i + right)*HASH_WIDTH
+                );
+
+        id += stride;
     }
 
     return;
 }
 
-void device_fill_digests_cap(
-        F* digests_cap,
-        uint32_t n_digests_cap,
+void device_fill_digests_caps(
+        F* digests_caps,
+        uint32_t num_digests,
         F* leaves,
-        uint32_t n_leaves,
+        uint32_t num_leaves,
         uint32_t leave_len,
         uint32_t cap_height
         ) {
-    F* d_digests;
-    F* d_leaves;
-    cudaMalloc(&d_leaves, sizeof(F)*leave_len*n_digests_cap);
-    cudaMalloc(&d_digests, sizeof(F)*HASH_WIDTH*n_digests_cap);
-    cudaMemcpy(d_leaves, leaves, sizeof(F)*leave_len*n_leaves, cudaMemcpyHostToDevice);
+    uint32_t num_caps = 1 << cap_height;
 
-    device_fill_digests0<<<N_BLOCK, N_THREAD>>>(d_digests, d_leaves, n_leaves, leave_len);
+    F* d_digests_caps;
+    F* d_leaves;
+    cudaMalloc(&d_leaves, sizeof(F)*leave_len*num_leaves);
+    cudaMalloc(&d_digests_caps, sizeof(F)*HASH_WIDTH*(num_digests + num_caps));
+    cudaMemcpy(d_leaves, leaves, sizeof(F)*leave_len*num_leaves, cudaMemcpyHostToDevice);
+
+    device_fill_digests0<<<N_BLOCK, N_THREAD>>>(
+            d_digests_caps,
+            num_digests / num_caps,
+            d_leaves,
+            num_leaves / num_caps,
+            leave_len,
+            num_caps
+            );
     cudaDeviceSynchronize();
 
     int level = 1;
-    int n_level_leaves = n_leaves >> 1;
+    int num_level_digests = num_leaves >> 1;
     uint32_t last_level_start_idx = 0;
     uint32_t level_start_idx = 2;
-
-    while (n_level_leaves > (1 << cap_height)) {
-        device_fill_digests1<<<N_BLOCK, N_THREAD>>>(d_digests, level, n_level_leaves, last_level_start_idx, level_start_idx);
+    while (num_level_digests > num_caps) {
+        device_fill_digests1<<<N_BLOCK, N_THREAD>>>(
+                d_digests_caps,
+                num_digests / num_caps,
+                level,
+                num_level_digests / num_caps,
+                last_level_start_idx,
+                level_start_idx,
+                num_caps
+                );
         cudaDeviceSynchronize();
 
         level += 1;
-        n_level_leaves = n_level_leaves >> 1;
+        num_level_digests = num_level_digests >> 1;
         last_level_start_idx = level_start_idx;
         level_start_idx += (1<<level);
     }
 
-    cudaMemcpy(digests_cap, d_digests, sizeof(F)*HASH_WIDTH*n_digests_cap, cudaMemcpyDeviceToHost);
+    cudaMemcpy(digests_caps, d_digests_caps, sizeof(F)*HASH_WIDTH*(num_digests + num_caps), cudaMemcpyDeviceToHost);
 
     cudaFree(d_leaves);
-    cudaFree(d_digests);
+    cudaFree(d_digests_caps);
 
     // caps
-    uint32_t left = last_level_start_idx;
-    uint32_t right = left + 1;
-    uint32_t to = level_start_idx;
-    two_to_one(digests_cap + to*HASH_WIDTH, digests_cap + left*HASH_WIDTH, digests_cap + right*HASH_WIDTH);
+    for (int i=0; i<num_caps; i++) {
+        uint32_t subtree_digests_idx = num_digests / num_caps * i;
+        uint32_t left = last_level_start_idx;
+        uint32_t right = left + 1;
+        two_to_one(
+                digests_caps + (num_digests + i)*HASH_WIDTH,
+                digests_caps + (subtree_digests_idx + left)*HASH_WIDTH,
+                digests_caps + (subtree_digests_idx + right)*HASH_WIDTH
+                );
+    }
 
     return;
 }
 
 void host_fill_digests_caps_sub(
-        uint32_t subleaves_idx,
-        uint32_t subdigests_idx,
+        uint32_t subtree_leaves_idx,
+        uint32_t subtree_digests_idx,
         uint32_t cap_idx,
-        F* digests_cap,
+        F* digests_caps,
         F* leaves,
         uint32_t num_leaves,
         uint32_t leave_len
-) {
+        ) {
     for (uint32_t i=0; i<num_leaves; i++) {
         uint32_t from = i;
         uint32_t to = (i>>1<<2) | (i&0b1);
-        hash_or_noop(digests_cap + (subdigests_idx + to)*HASH_WIDTH, leaves + (subleaves_idx + from)*leave_len, leave_len);
+        hash_or_noop(
+                digests_caps + (subtree_digests_idx + to)*HASH_WIDTH,
+                leaves + (subtree_leaves_idx + from)*leave_len,
+                leave_len
+                );
     }
 
     uint32_t level = 1;
-    uint32_t n_level_leaves = num_leaves >> 1;
+    uint32_t num_level_leaves = num_leaves >> 1;
     uint32_t last_level_start_idx = 0;
     uint32_t level_start_idx = 2;
 
-    while (n_level_leaves > 1) {
-        for (uint32_t i=0; i<n_level_leaves; i++) {
+    while (num_level_leaves > 1) {
+        for (uint32_t i=0; i<num_level_leaves; i++) {
             uint32_t left = last_level_start_idx + i*(1<<(level+1));
             uint32_t right = left + 1;
             uint32_t to = (level_start_idx + (i>>1)*(1<<(level+2))) | (i&0b1);
             two_to_one(
-                    digests_cap + (subdigests_idx + to)*HASH_WIDTH,
-                    digests_cap + (subdigests_idx + left)*HASH_WIDTH,
-                    digests_cap + (subdigests_idx + right)*HASH_WIDTH
+                    digests_caps + (subtree_digests_idx + to)*HASH_WIDTH,
+                    digests_caps + (subtree_digests_idx + left)*HASH_WIDTH,
+                    digests_caps + (subtree_digests_idx + right)*HASH_WIDTH
                     );
         }
 
         level += 1;
-        n_level_leaves = n_level_leaves >> 1;
+        num_level_leaves = num_level_leaves >> 1;
         last_level_start_idx = level_start_idx;
         level_start_idx += (1<<level);
     }
@@ -200,22 +231,22 @@ void host_fill_digests_caps_sub(
     uint32_t left = last_level_start_idx;
     uint32_t right = left + 1;
     two_to_one(
-            digests_cap + cap_idx*HASH_WIDTH,
-            digests_cap + (subdigests_idx + left)*HASH_WIDTH,
-            digests_cap + (subdigests_idx + right)*HASH_WIDTH
+            digests_caps + cap_idx*HASH_WIDTH,
+            digests_caps + (subtree_digests_idx + left)*HASH_WIDTH,
+            digests_caps + (subtree_digests_idx + right)*HASH_WIDTH
             );
 
     return;
 }
 
 void host_fill_digests_caps(
-        F* digests_cap,
+        F* digests_caps,
         uint32_t num_digests,
         F* leaves,
         uint32_t num_leaves,
         uint32_t leave_len,
         uint32_t cap_height
-        ) {
+) {
     uint32_t num_caps = 1 << cap_height;
     uint32_t num_subtree_leaves = num_leaves / num_caps;
     uint32_t num_subtree_digests = num_digests / num_caps;
@@ -224,7 +255,7 @@ void host_fill_digests_caps(
             num_subtree_leaves * i,
             num_subtree_digests * i,
             num_digests + i,
-            digests_cap,
+            digests_caps,
             leaves,
             num_leaves / num_caps,
             leave_len
@@ -234,8 +265,8 @@ void host_fill_digests_caps(
     return;
 }
 
-void print_leaves(F* leaves, uint32_t n_leaves, uint32_t leave_len) {
-    for (uint32_t i=0; i<n_leaves; i++) {
+void print_leaves(F* leaves, uint32_t num_leaves, uint32_t leave_len) {
+    for (uint32_t i=0; i<num_leaves; i++) {
         std::cout << std::dec;
         std::cout << "leave" << i << " is [";
         std::cout << std::hex;
@@ -248,8 +279,8 @@ void print_leaves(F* leaves, uint32_t n_leaves, uint32_t leave_len) {
     std::cout << std::dec;
 }
 
-void print_digests(F* digests, uint32_t n_digests) {
-    for (uint32_t i=0; i<n_digests; i++) {
+void print_digests(F* digests, uint32_t num_digests) {
+    for (uint32_t i=0; i<num_digests; i++) {
         std::cout << std::dec;
         std::cout << "digest" << i << " is [";
         std::cout << std::hex;
@@ -262,11 +293,11 @@ void print_digests(F* digests, uint32_t n_digests) {
     std::cout << std::dec;
 }
 
-void print_cap(F* digests_cap, uint32_t n_digests, uint32_t cap_height) {
+void print_caps(F* digests_caps, uint32_t num_digests, uint32_t cap_height) {
     std::cout << std::hex;
     for (int i=0; i<(1<<cap_height); i++) {
         for (int j=0; j<HASH_WIDTH; j++) {
-            std::cout << digests_cap[(n_digests+i)*HASH_WIDTH + j] << ", ";
+            std::cout << digests_caps[(num_digests+i)*HASH_WIDTH + j] << ", ";
         }
         std::cout << std::endl;
     }

@@ -3,9 +3,9 @@
 
 #include "merkle_tree.cuh"
 
-#define CAP_HEIGHT 1
+#define CAP_HEIGHT 2
 #define LEAVE_LEN 8
-#define LOG_N_LEAVES 3
+#define LOG_N_LEAVES 12
 
 int main() {
     auto start = std::chrono::high_resolution_clock::now();
@@ -16,7 +16,7 @@ int main() {
     uint32_t num_leaves = 1 << LOG_N_LEAVES;
     uint32_t leave_len = LEAVE_LEN;
     uint32_t num_digests = 2 * (num_leaves - (1 << cap_height));
-    uint32_t num_digests_cap = num_digests + (1 << cap_height);
+    uint32_t num_digests_caps = num_digests + (1 << cap_height);
 
     /******
        Init
@@ -27,14 +27,14 @@ int main() {
             leaves[i*leave_len + j] = F(0);
         }
     }
-    F* digests_cap = (F*)malloc(sizeof(F)*HASH_WIDTH*num_digests_cap);
+    F* digests_caps = (F*)malloc(sizeof(F)*HASH_WIDTH*num_digests_caps);
 
     /******
        Host
     *******/
     start = std::chrono::high_resolution_clock::now();
     host_fill_digests_caps(
-            digests_cap,
+            digests_caps,
             num_digests,
             leaves,
             num_leaves,
@@ -44,28 +44,37 @@ int main() {
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
     std::cout << "Host time is " << duration.count() << std::endl;
-    // print_leaves(leaves, num_leaves);
-    print_digests(digests_cap, num_digests_cap - (1<<cap_height));
-    print_cap(digests_cap, num_digests_cap - (1<<cap_height), cap_height);
+    // print_leaves(leaves, num_leaves, leave_len);
+    // print_digests(digests_caps, num_digests);
+    print_caps(digests_caps, num_digests, cap_height);
+
+    /******
+       Init
+    *******/
+    for (int i=0; i<num_digests_caps; i++) {
+        for (int j=0; j<HASH_WIDTH; j++) {
+            digests_caps[i*HASH_WIDTH + j] = F(0);
+        }
+    }
 
     /********
        Device
     *********/
-    // start = std::chrono::high_resolution_clock::now();
-    // device_fill_digests_cap(
-    //         digests_cap,
-    //         num_digests_cap,
-    //         leaves,
-    //         num_leaves,
-    //         leave_len,
-    //         cap_height
-    //         );
-    // end = std::chrono::high_resolution_clock::now();
-    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    // std::cout << "Device time is " << duration.count() << std::endl;
-    // // print_leaves(leaves, num_leaves);
-    // // print_digests(digests_cap, num_digests_cap - (1<<cap_height));
-    // print_cap(digests_cap, num_digests_cap - (1<<cap_height), cap_height);
+    start = std::chrono::high_resolution_clock::now();
+    device_fill_digests_caps(
+            digests_caps,
+            num_digests,
+            leaves,
+            num_leaves,
+            leave_len,
+            cap_height
+            );
+    end = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    std::cout << "Device time is " << duration.count() << std::endl;
+    // print_leaves(leaves, num_leaves, leave_len);
+    // print_digests(digests_caps, num_digests);
+    print_caps(digests_caps, num_digests, cap_height);
 
     return 0;
 }
