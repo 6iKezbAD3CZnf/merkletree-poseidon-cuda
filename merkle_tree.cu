@@ -28,8 +28,17 @@ void two_to_one(F* digest, F* left, F* right) {
 
 __host__ __device__
 void hash_or_noop(F* digest, F* leave, uint32_t leave_len) {
-    if (leave_len * 8 <= HASH_WIDTH) {
-        assert(false);
+    if (leave_len <= HASH_WIDTH) {
+        // noop
+        for (uint32_t i=0; i<HASH_WIDTH; i++) {
+            if (i < leave_len) {
+                digest[i] = leave[i];
+            } else {
+                digest[i] = F(0);
+            }
+        }
+
+        return;
     }
 
     // hash_no_pad()

@@ -3,7 +3,7 @@
 
 #include "merkle_tree.cuh"
 
-#define CAP_HEIGHT 4
+#define CAP_HEIGHT 2
 #define LEAVE_LEN 8
 #define LOG_N_LEAVES 4
 
