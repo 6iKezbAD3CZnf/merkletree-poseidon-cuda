@@ -3,9 +3,9 @@
 
 #include "merkle_tree.cuh"
 
-#define CAP_HEIGHT 2
-#define LEAVE_LEN 8
-#define LOG_N_LEAVES 4
+#define CAP_HEIGHT 4
+#define LEAVE_LEN 135
+#define LOG_N_LEAVES 20
 
 int main() {
     auto start = std::chrono::high_resolution_clock::now();
@@ -32,21 +32,21 @@ int main() {
     /******
        Host
     *******/
-    start = std::chrono::high_resolution_clock::now();
-    host_fill_digests_caps(
-            digests_caps,
-            num_digests,
-            leaves,
-            num_leaves,
-            leave_len,
-            cap_height
-            );
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    std::cout << "Host time is " << duration.count() << std::endl;
-    // print_leaves(leaves, num_leaves, leave_len);
-    // print_digests(digests_caps, num_digests);
-    print_caps(digests_caps, num_digests, cap_height);
+    // start = std::chrono::high_resolution_clock::now();
+    // host_fill_digests_caps(
+    //         digests_caps,
+    //         num_digests,
+    //         leaves,
+    //         num_leaves,
+    //         leave_len,
+    //         cap_height
+    //         );
+    // end = std::chrono::high_resolution_clock::now();
+    // duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    // std::cout << "Host time is " << duration.count() << std::endl;
+    // // print_leaves(leaves, num_leaves, leave_len);
+    // // print_digests(digests_caps, num_digests);
+    // print_caps(digests_caps, num_digests, cap_height);
 
     /******
        Init
