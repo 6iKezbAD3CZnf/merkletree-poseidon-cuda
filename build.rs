@@ -19,9 +19,9 @@ fn main() {
         .cudart("static")
         .flag("-gencode")
         .flag("arch=compute_75,code=sm_75")
-        .file("field.cu")
-        .file("poseidon.cu")
-        .file("merkle_tree.cu")
-        .file("main.cu")
-        .compile("libcc_main.a");
+        .file("merkletree-poseidon-cuda/field.cu")
+        .file("merkletree-poseidon-cuda/poseidon.cu")
+        .file("merkletree-poseidon-cuda/merkle_tree.cu")
+        .file("merkletree-poseidon-cuda/cc_rust.cu")
+        .compile("libmerkletree_cuda.a");
 }
